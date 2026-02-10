@@ -3,6 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OPNsense](https://img.shields.io/badge/OPNsense-26.1+-blue.svg)](https://opnsense.org/)
 
+> ⚠️ **ADVERTENCIA: Esta herramienta otorga acceso de ALTO PRIVILEGIO a tu firewall.**
+> Al usarla, declaras ser un adulto responsable. [Ver disclaimer completo](SKILL.md)
+
 Complete OPNsense firewall administration for AI agents. Automate backups, monitor security, manage services, and troubleshoot network issues via API and SSH.
 
 ## 🚀 Quick Start
