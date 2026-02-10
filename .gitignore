@@ -1,0 +1,22 @@
+# Ignore sensitive files
+.opnsense/
+*.credentials
+.env
+
+# Backup files
+backups/*.xml
+backups/*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
