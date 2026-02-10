@@ -129,11 +129,25 @@ Complete OPNsense firewall administration via API and SSH. Automate backups, mon
 
 ## Security Best Practices
 
-1. **Use HTTPS in production** - The scripts use `-k` (insecure) for development; remove for production with valid certificates
+1. **SSL Certificate Validation** - Enabled by default. Use `--insecure` or `OPNSENSE_INSECURE=true` ONLY for development or self-signed certificates in internal networks
 2. **Restrict API permissions** - Create dedicated API users with minimal required permissions
 3. **Secure credential storage** - Use file permissions (600) and environment variables
 4. **Backup before changes** - Always backup configuration before making changes
 5. **Test IDS rules first** - Run Suricata in IDS mode before enabling IPS blocking
+
+### SSL/TLS Configuration
+
+By default, all API calls validate SSL certificates. For production deployments with valid certificates, no changes needed.
+
+For development or self-signed certificates:
+```bash
+# Option 1: Command line flag
+./scripts/opnsense-api.sh --insecure status
+
+# Option 2: Environment variable
+export OPNSENSE_INSECURE=true
+./scripts/opnsense-api.sh status
+```
 
 ## Key Concepts
 

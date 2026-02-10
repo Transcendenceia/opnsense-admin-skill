@@ -7,6 +7,7 @@ OPNSENSE_HOST="${OPNSENSE_HOST:-192.168.1.1}"
 OPNSENSE_PORT="${OPNSENSE_PORT:-443}"
 OPNSENSE_KEY="${OPNSENSE_KEY:-}"
 OPNSENSE_SECRET="${OPNSENSE_SECRET:-}"
+OPNSENSE_INSECURE="${OPNSENSE_INSECURE:-false}"
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 KEEP_DAYS="${KEEP_DAYS:-30}"
 
@@ -14,31 +15,6 @@ KEEP_DAYS="${KEEP_DAYS:-30}"
 if [[ -z "$OPNSENSE_KEY" && -f ~/.opnsense/credentials ]]; then
     source ~/.opnsense/credentials
 fi
-
-show_help() {
-    cat << EOF
-OPNsense Configuration Backup
-
-Usage: $0 [options]
-
-Options:
-    -d, --dir <path>        Backup directory (default: ./backups)
-    -k, --keep <days>       Keep backups for N days (default: 30)
-    -c, --config-only       Only backup config.xml (not RRD)
-    -h, --help              Show this help
-
-Environment:
-    OPNSENSE_KEY        API key
-    OPNSENSE_SECRET     API secret
-    BACKUP_DIR          Backup directory
-    KEEP_DAYS           Retention period
-
-Examples:
-    $0                          # Full backup with defaults
-    $0 -d /mnt/backups/opnsense -k 90
-    $0 --config-only            # Smaller backup without RRD data
-EOF
-}
 
 # Parse arguments
 CONFIG_ONLY=false
@@ -56,6 +32,10 @@ while [[ $# -gt 0 ]]; do
             CONFIG_ONLY=true
             shift
             ;;
+        --insecure)
+            OPNSENSE_INSECURE="true"
+            shift
+            ;;
         -h|--help)
             show_help
             exit 0
@@ -67,6 +47,44 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Set curl flags based on security preference
+INSECURE_FLAG=""
+if [[ "$OPNSENSE_INSECURE" == "true" ]]; then
+    INSECURE_FLAG="-k"
+fi
+
+show_help() {
+    cat << EOF
+OPNsense Configuration Backup
+
+Usage: $0 [options]
+
+Options:
+    -d, --dir <path>        Backup directory (default: ./backups)
+    -k, --keep <days>       Keep backups for N days (default: 30)
+    -c, --config-only       Only backup config.xml (not RRD)
+    --insecure              Disable SSL certificate validation (NOT recommended)
+    -h, --help              Show this help
+
+Environment:
+    OPNSENSE_KEY            API key
+    OPNSENSE_SECRET         API secret
+    OPNSENSE_INSECURE       Set to 'true' to disable SSL verification
+    BACKUP_DIR              Backup directory
+    KEEP_DAYS               Retention period
+
+Security Note:
+    By default, SSL certificate validation is ENABLED.
+    Use --insecure only for development or self-signed certificates.
+
+Examples:
+    $0                          # Full backup with defaults
+    $0 -d /mnt/backups/opnsense -k 90
+    $0 --config-only            # Smaller backup without RRD data
+    $0 --insecure               # For self-signed certificates
+EOF
+}
 
 # Check credentials
 if [[ -z "$OPNSENSE_KEY" || -z "$OPNSENSE_SECRET" ]]; then
@@ -89,15 +107,16 @@ echo "Creating OPNsense backup..."
 echo "  Host: $OPNSENSE_HOST"
 echo "  Destination: $BACKUP_FILE"
 echo "  Config only: $CONFIG_ONLY"
+echo "  SSL verification: $([ -z "$INSECURE_FLAG" ] && echo 'ENABLED' || echo 'DISABLED')"
 
 # Download backup
 if [[ "$CONFIG_ONLY" == true ]]; then
-    curl -s -k -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
+    curl -s $INSECURE_FLAG -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
         "https://${OPNSENSE_HOST}:${OPNSENSE_PORT}/api/core/backup/backup" \
         -o "$BACKUP_FILE"
 else
     # Full backup including RRD data
-    curl -s -k -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
+    curl -s $INSECURE_FLAG -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
         "https://${OPNSENSE_HOST}:${OPNSENSE_PORT}/api/core/backup/backup?rrd=true" \
         -o "$BACKUP_FILE"
 fi

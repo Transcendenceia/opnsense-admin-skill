@@ -1,23 +1,46 @@
 #!/bin/bash
 # OPNsense API Helper Script
-# Usage: ./opnsense-api.sh <endpoint> [method] [data]
+# Usage: ./opnsense-api.sh <command> [options]
 
 # Configuration - adjust these for your environment
 OPNSENSE_HOST="${OPNSENSE_HOST:-192.168.1.1}"
 OPNSENSE_PORT="${OPNSENSE_PORT:-443}"
 OPNSENSE_KEY="${OPNSENSE_KEY:-}"
 OPNSENSE_SECRET="${OPNSENSE_SECRET:-}"
+OPNSENSE_INSECURE="${OPNSENSE_INSECURE:-false}"
 
 # If keys not set, try to read from environment file
 if [[ -z "$OPNSENSE_KEY" && -f ~/.opnsense/credentials ]]; then
     source ~/.opnsense/credentials
 fi
 
+# Parse arguments
+INSECURE_FLAG=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --insecure|-k)
+            OPNSENSE_INSECURE="true"
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Set curl flags based on security preference
+if [[ "$OPNSENSE_INSECURE" == "true" ]]; then
+    INSECURE_FLAG="-k"
+fi
+
 show_help() {
     cat << EOF
 OPNsense API Helper
 
-Usage: $0 <command> [options]
+Usage: $0 [options] <command> [args]
+
+Options:
+    --insecure, -k      Disable SSL certificate validation (NOT recommended)
 
 Commands:
     get <endpoint>              Make GET request to endpoint
@@ -30,21 +53,30 @@ Commands:
     unbound-stats               Get Unbound DNS statistics
     reboot                      Reboot system
     version                     Show OPNsense version
+    help                        Show this help
 
 Environment Variables:
     OPNSENSE_HOST       OPNsense IP/hostname (default: 192.168.1.1)
     OPNSENSE_PORT       HTTPS port (default: 443)
     OPNSENSE_KEY        API key
     OPNSENSE_SECRET     API secret
+    OPNSENSE_INSECURE   Set to 'true' to disable SSL verification (default: false)
 
 Credentials File:
     Create ~/.opnsense/credentials with:
     OPNSENSE_KEY=your_key
     OPNSENSE_SECRET=your_secret
 
+Security Note:
+    By default, SSL certificate validation is ENABLED.
+    Use --insecure or set OPNSENSE_INSECURE=true only for development
+    or when using self-signed certificates in internal networks.
+
 Examples:
+    $0 status
     $0 get /api/core/system/status
     $0 firmware-status
+    $0 --insecure get /api/core/system/status
     $0 post /api/core/firmware/update '{"upgrade":true}'
 EOF
 }
@@ -64,16 +96,16 @@ make_request() {
     local url="https://${OPNSENSE_HOST}:${OPNSENSE_PORT}${endpoint}"
     
     if [[ "$method" == "GET" ]]; then
-        curl -s -k -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
+        curl -s $INSECURE_FLAG -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
             -H "Accept: application/json" \
-            "$url" | jq . 2>/dev/null || curl -s -k -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" "$url"
+            "$url" | jq . 2>/dev/null || curl -s $INSECURE_FLAG -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" "$url"
     else
-        curl -s -k -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
+        curl -s $INSECURE_FLAG -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
             -X POST \
             -d "$data" \
-            "$url" | jq . 2>/dev/null || curl -s -k -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" -X POST -d "$data" "$url"
+            "$url" | jq . 2>/dev/null || curl -s $INSECURE_FLAG -u "${OPNSENSE_KEY}:${OPNSENSE_SECRET}" -X POST -d "$data" "$url"
     fi
 }
 
