@@ -5,22 +5,10 @@ description: Manage OPNsense firewall, DNS, IDS/IPS, and network configuration v
 
 # OPNsense Admin
 
-> ⚠️ **ADVERTENCIA DE RESPONSABILIDAD / DISCLAIMER**
->
-> Esta herramienta otorga acceso de **ALTO PRIVILEGIO** a tu firewall y red.
-> Puede modificar reglas de firewall, bloquear tráfico, reiniciar servicios críticos.
->
-> **Al usar esta skill, declaras que:**
-> - Eres un adulto responsable
-> - Tienes autorización para administrar este firewall
-> - Entiendes que un error puede dejar tu red inoperable
-> - Usarás esta herramienta éticamente y legalmente
->
-> **El autor no se hace responsable** por configuraciones erróneas, bloqueos
-> de acceso, o daños derivados del uso de esta skill.
+> ⚠️ **DISCLAIMER**
 >
 > This tool grants **HIGH PRIVILEGE** access to your firewall and network.
-> It can modify firewall rules, block traffic, restart critical services.
+> It can modify firewall rules, block traffic, and restart critical services.
 >
 > **By using this skill, you declare that:**
 > - You are a responsible adult
